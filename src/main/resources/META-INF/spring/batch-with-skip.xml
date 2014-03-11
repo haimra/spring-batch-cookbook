@@ -8,28 +8,20 @@
 		http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd
 		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
-	<import resource="infra/job-infra.xml"/>	
 	<context:component-scan base-package="org.raman.springframwork.classic" />
-	<batch:job id="classicScenario">
-		<batch:step id="extractArchaive" next="processCsv">
-			<batch:tasklet ref="decompressTasklet" />
-		</batch:step>
-		<batch:step id="processCsv" next="deleteTempCsv">
-			<batch:tasklet transaction-manager="transactionManager">
-				<batch:chunk reader="customerFileReader" processor="customerItemProcessor"
-					writer="jdbcWritter" commit-interval="10" />
-			</batch:tasklet>
+	<batch:step id="jobWithSkip">
+		<batch:tasklet transaction-manager="transactionManager">
+			<batch:chunk reader="customerFileReader" processor="customerItemProcessor"
+				writer="jdbcWritter" commit-interval="5" skip-limit="10">
+				<batch:skippable-exception-classes>
+					<batch:include class="java.lang.Throwable" />
+				</batch:skippable-exception-classes>
+			</batch:chunk>
 			<batch:listeners>
-				<batch:listener ref="promoteUpdateCountToJobContextListener" />
+				<batch:listener ref="skipListener" />
 			</batch:listeners>
-		</batch:step>
-		<batch:step id="deleteTempCsv">
-			<batch:tasklet ref="deleteFileTaskelt" />
-		</batch:step>
-	</batch:job>
-
-	<bean id="deleteFileTaskelt" class="org.raman.springframwork.classic.DeleteFileTaskelt"
-		scope="step" />
+		</batch:tasklet>
+	</batch:step>
 	<bean id="customerFileReader" class="org.springframework.batch.item.file.FlatFileItemReader">
 		<property name="resource" value="file:/temp/customers.csv" />
 		<property name="lineMapper">
@@ -39,12 +31,7 @@
 			</bean>
 		</property>
 	</bean>
-	<bean id="decompressTasklet" class="org.raman.springframwork.classic.DecompressTasklet">
-		<property name="inputResource" value="classpath:batch/classic/customers.zip" />
-		<property name="targetDirectory" value="/temp/" />
-		<property name="targetFile" value="customers.csv" />
-	</bean>
-	<bean id="customerLineTokenizer"
+	<bean id="customerLineTokenizer" 
 		class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
 		<property name="delimiter" value="," />
 		<property name="names" value="id,firstName,lastName,cardNumber" />
@@ -54,10 +41,9 @@
 		<property name="sql"
 			value="INSERT INTO customer (id,first_name,last_name,card_number) VALUES(?,?,?,?)" />
 		<property name="itemPreparedStatementSetter" ref="customerPreparedStatementSetter" />
-		<property name="dataSource" ref="dataSource" />
+		<property name="dataSource" ref="classicDataSource" />
 	</bean>
-	
-	<bean id="dataSource"
+	<bean id="classicDataSource"
 		class="org.springframework.jdbc.datasource.SingleConnectionDataSource">
 		<property name="driverClassName" value="org.h2.Driver" />
 		<property name="url" value="jdbc:h2:mem:classic" />
@@ -65,8 +51,9 @@
 		<property name="password" value="" />
 		<property name="suppressClose" value="true" />
 	</bean>
-	<jdbc:initialize-database data-source="dataSource">
+	<jdbc:initialize-database data-source="classicDataSource">
 		<jdbc:script location="classpath:batch/classic/schema.sql" />
 	</jdbc:initialize-database>
-	
+
+
 </beans>
