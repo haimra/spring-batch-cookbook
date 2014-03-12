@@ -8,41 +8,52 @@
 		http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd
 		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
-	<import resource="infra/job-infra.xml"/>	
+	<import resource="infra/job-infra.xml" />
 	<context:component-scan base-package="org.raman.springframwork.classic" />
-	<batch:job id="classicScenario">
-		<batch:step id="extractArchaive" next="processCsv">
-			<batch:tasklet ref="decompressTasklet" />
-		</batch:step>
-		<batch:step id="processCsv" next="deleteTempCsv">
+	<context:component-scan base-package="org.raman.springframwork.stepscope" />
+	<batch:job id="testScopStep">
+		<batch:step id="step1" next="step2">
 			<batch:tasklet transaction-manager="transactionManager">
-				<batch:chunk reader="customerFileReader" processor="customerItemProcessor"
-					writer="jdbcWritter" commit-interval="10" />
+				<batch:chunk reader="doNothingItemReader" processor="doNothingItemProcessor"
+					writer="doNothingItemWritter" commit-interval="3">
+				</batch:chunk>
 			</batch:tasklet>
-			<batch:listeners>
-				<batch:listener ref="promoteUpdateCountToJobContextListener" />
-			</batch:listeners>
 		</batch:step>
-		<batch:step id="deleteTempCsv">
-			<batch:tasklet ref="deleteFileTaskelt" />
+		 <batch:step id="step2">
+			<batch:tasklet transaction-manager="transactionManager">
+				<batch:chunk reader="doNothingItemReader" processor="doNothingItemProcessor"
+					writer="doNothingItemWritter" commit-interval="3">
+				</batch:chunk>
+			</batch:tasklet>
 		</batch:step>
+<!-- 		<batch:step id="step1"> -->
+<!-- 			<batch:tasklet transaction-manager="transactionManager"> -->
+<!-- 				<batch:chunk reader="doNothingItemReader"  -->
+<!-- 					processor="doNothingItemProcessor" -->
+<!-- 					writer="compositeWriter" commit-interval="3"> -->
+<!-- 				</batch:chunk> -->
+<!-- 			</batch:tasklet> -->
+<!-- 		</batch:step>  -->
+		
 	</batch:job>
 
-	<bean id="deleteFileTaskelt" class="org.raman.springframwork.classic.DeleteFileTaskelt"
-		scope="step" />
+	<bean id="compositeWriter"
+		class="org.springframework.batch.item.support.CompositeItemWriter">
+		<property name="delegates">
+			<list>
+				<ref bean="doNothingItemWritter" />
+				<ref bean="doNothingItemWritter" />
+			</list>
+		</property>
+	</bean>
 	<bean id="customerFileReader" class="org.springframework.batch.item.file.FlatFileItemReader">
-		<property name="resource" value="file:/temp/customers.csv" />
+		<property name="resource" value="classpath:batch/skip/customers.csv" />
 		<property name="lineMapper">
 			<bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
 				<property name="fieldSetMapper" ref="customerFieldSetMapper" />
 				<property name="lineTokenizer" ref="customerLineTokenizer" />
 			</bean>
 		</property>
-	</bean>
-	<bean id="decompressTasklet" class="org.raman.springframwork.classic.DecompressTasklet">
-		<property name="inputResource" value="classpath:batch/classic/customers.zip" />
-		<property name="targetDirectory" value="/temp/" />
-		<property name="targetFile" value="customers.csv" />
 	</bean>
 	<bean id="customerLineTokenizer"
 		class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
@@ -54,10 +65,9 @@
 		<property name="sql"
 			value="INSERT INTO customer (id,first_name,last_name,card_number) VALUES(?,?,?,?)" />
 		<property name="itemPreparedStatementSetter" ref="customerPreparedStatementSetter" />
-		<property name="dataSource" ref="dataSource" />
+		<property name="dataSource" ref="classicDataSource" />
 	</bean>
-	
-	<bean id="dataSource"
+	<bean id="classicDataSource"
 		class="org.springframework.jdbc.datasource.SingleConnectionDataSource">
 		<property name="driverClassName" value="org.h2.Driver" />
 		<property name="url" value="jdbc:h2:mem:classic" />
@@ -65,8 +75,9 @@
 		<property name="password" value="" />
 		<property name="suppressClose" value="true" />
 	</bean>
-	<jdbc:initialize-database data-source="dataSource">
+	<jdbc:initialize-database data-source="classicDataSource">
 		<jdbc:script location="classpath:batch/classic/schema.sql" />
 	</jdbc:initialize-database>
-	
+
+
 </beans>

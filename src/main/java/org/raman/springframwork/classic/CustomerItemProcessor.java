@@ -10,9 +10,14 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
 	@Override
 	public Customer process(Customer customer) throws Exception {
 		String cardNumber = customer.getCardNumber();
-		String shaCardNumber = sha256(cardNumber);
-		customer.setCardNumber(shaCardNumber);
-		return customer;
+		//if(cardNumber.matches("(\\d{4}-){3}\\d{4}")){
+			String shaCardNumber = sha256(cardNumber);
+			customer.setCardNumber(shaCardNumber);
+			return customer;
+	//	}else{
+		//	throw new Exception("Ilegal card namber");
+		//}
+		
 	}
 
 	private String sha256(String cardNumber) {

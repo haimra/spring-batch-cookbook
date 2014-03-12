@@ -31,8 +31,8 @@
 			</batch:listeners>
 	</batch:step>
 	<batch:step id="summerizeCopyWrites">
-		<batch:tasklet id="summerizeCopyWritesTaskelt"">
-			<bean class="Tasklet" scope="step">
+		<batch:tasklet>
+			<bean  id="summerizeCopyWritesTaskelt" class="Tasklet" scope="step">
 				<property name="writeCountsList">	
 					<list>
 						<value>#{jobExecutionContext['readFroDB1WrietToDB2.writeCount']}</value>
