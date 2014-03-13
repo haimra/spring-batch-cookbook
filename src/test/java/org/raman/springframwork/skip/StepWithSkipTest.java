@@ -1,7 +1,5 @@
 package org.raman.springframwork.skip;
 
-import javax.annotation.Resource;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.batch.core.JobExecution;
