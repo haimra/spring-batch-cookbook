@@ -10,39 +10,38 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
 	<context:component-scan base-package="org.raman.springframwork.logic" />
 	<batch:job id="logic">
-	<batch:step id="readFroDB1WrietToDB2" next="readFroDB2WrietToDB3">
+		<batch:step id="readFroDB1WrietToDB2" next="readFroDB2WrietToDB3">
 			<batch:tasklet transaction-manager="transactionManager">
-				<batch:chunk reader="reader"
-							  writer="writter"
-							 />
+				<batch:chunk reader="reader" writer="writter" />
 			</batch:tasklet>
 			<batch:listeners>
-				<batch:listener ref="promoteUpdateCountToJobContextListener"/>
+				<batch:listener ref="promoteUpdateCountToJobContextListener" />
 			</batch:listeners>
-	</batch:step>		
-	<batch:step id="readFroDB2WrietToDB3" next="summerizeCopyWrites">
+		</batch:step>
+		<batch:step id="readFroDB2WrietToDB3" next="summerizeCopyWrites">
 			<batch:tasklet transaction-manager="transactionManager">
-				<batch:chunk reader="reader"
-							  writer="writter"
-							 />
+				<batch:chunk reader="reader" writer="writter" />
 			</batch:tasklet>
 			<batch:listeners>
-				<batch:listener ref="promoteUpdateCountToJobContextListener"/>
+				<batch:listener ref="promoteUpdateCountToJobContextListener" />
 			</batch:listeners>
-	</batch:step>
-	<batch:step id="summerizeCopyWrites">
-		<batch:tasklet>
-			<bean  id="summerizeCopyWritesTaskelt" class="Tasklet" scope="step">
-				<property name="writeCountsList">	
-					<list>
-						<value>#{jobExecutionContext['readFroDB1WrietToDB2.writeCount']}</value>
-						<value>#{jobExecutionContext['readFroDB2WrietToDB3.writeCount']}</value>
-					</list>
-				</property>
-			</bean>
-		</batch:tasklet>
-	</batch:step>	
-	</batch:job>
+		</batch:step>
+		<batch:step id="summerizeCopyWrites">
+			<batch:tasklet transaction-manager="transactionManager">
+			<bean id="summerizeCopyWritesTaskelt" class="Tasklet" scope="step">
+		<property name="writeCountsList">
+			<list>
+				<value>#{jobExecutionContext['readFroDB1WrietToDB2.writeCount']}
+				</value>
+				<value>#{jobExecutionContext['readFroDB2WrietToDB3.writeCount']}
+				</value>
+			</list>
+		</property>
+	</bean>
+			</batch:tasklet>
+		</batch:step>
 
+	</batch:job>
 	
+
 </beans>
