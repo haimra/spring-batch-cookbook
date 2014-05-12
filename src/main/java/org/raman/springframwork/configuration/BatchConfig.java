@@ -10,12 +10,9 @@ import javax.sql.DataSource;
 import org.raman.springframwork.classic.CustomerFieldSetMapper;
 import org.raman.springframwork.classic.DeleteFileTaskelt;
 import org.raman.springframwork.classic.domain.Customer;
-import org.raman.springframwork.classic.strategy.Add;
-import org.raman.springframwork.classic.strategy.ContextFactory;
-import org.raman.springframwork.classic.strategy.Multiply;
 import org.raman.springframwork.classic.strategy.Strategy;
 import org.raman.springframwork.classic.strategy.StrategyEnum;
-import org.raman.springframwork.classic.strategy.Subtract;
+import org.raman.springframwork.classic.strategy.StrategyLocator;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.JobRegistry;
@@ -75,12 +72,12 @@ public class BatchConfig {
 	protected ItemPreparedStatementSetter<Customer> customerPreparedStatementSetter;
 
 	@Resource
-	protected Strategy add;
+	protected Strategy strategyA;
 	@Resource
-	protected Strategy subtract;
+	protected Strategy strategyB;
 	@Resource
-	protected Strategy multiply;	
-	
+	protected Strategy strategyC;
+		
 	@Bean
 	public Job classicScenario() throws Exception {
 		return jobs.get("classicScenario").start(processCsv()).next(deleteCsv()).build();
@@ -101,10 +98,11 @@ public class BatchConfig {
 	@StepScope
 	public DeleteFileTaskelt deleteFileTaskelt() {
 		  DeleteFileTaskelt deleteFileTaskelt = new DeleteFileTaskelt();	
-		  deleteFileTaskelt.setContextFactory(contextFactory());
+		  deleteFileTaskelt.setStrategyLocator(strategyLocator());
 		  return deleteFileTaskelt;
 		  
 	}
+	
 	@Bean
 	protected ItemReader<Customer> reader() throws MalformedURLException {
 		FlatFileItemReader<Customer> reader = new FlatFileItemReader<Customer>();
@@ -132,18 +130,18 @@ public class BatchConfig {
 	}
 	
 	@Bean 
-	protected ContextFactory contextFactory(){
-		ContextFactory contextFactory = new ContextFactory();
-		contextFactory.setStrategyMap(strategyMap());
-		return contextFactory;		
+	protected StrategyLocator strategyLocator(){
+		StrategyLocator strategyLocator = new StrategyLocator();
+		strategyLocator.setStrategyMap(strategyMap());
+		return strategyLocator;		
 	}
 
 	@Bean
 	protected Map<StrategyEnum, ? extends Strategy> strategyMap(){
 		Map<StrategyEnum, Strategy> strategyMap = new HashMap<>();
-		strategyMap.put(StrategyEnum.Add, add);
-		strategyMap.put(StrategyEnum.Subtract, subtract);
-		strategyMap.put(StrategyEnum.Multiply, multiply);
+		strategyMap.put(StrategyEnum.StrategyA, strategyA);
+		strategyMap.put(StrategyEnum.StrategyB, strategyB);
+		strategyMap.put(StrategyEnum.StrategyC, strategyC);
 		return strategyMap;
 		
 	}
