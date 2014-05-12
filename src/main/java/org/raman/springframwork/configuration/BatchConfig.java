@@ -1,17 +1,28 @@
 package org.raman.springframwork.configuration;
 
 import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
 
+import javax.annotation.Resource;
 import javax.sql.DataSource;
 
 import org.raman.springframwork.classic.CustomerFieldSetMapper;
+import org.raman.springframwork.classic.DeleteFileTaskelt;
 import org.raman.springframwork.classic.domain.Customer;
+import org.raman.springframwork.classic.strategy.Add;
+import org.raman.springframwork.classic.strategy.ContextFactory;
+import org.raman.springframwork.classic.strategy.Multiply;
+import org.raman.springframwork.classic.strategy.Strategy;
+import org.raman.springframwork.classic.strategy.StrategyEnum;
+import org.raman.springframwork.classic.strategy.Subtract;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.JobRegistry;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.configuration.support.JobRegistryBeanPostProcessor;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
@@ -63,17 +74,37 @@ public class BatchConfig {
 	@Autowired
 	protected ItemPreparedStatementSetter<Customer> customerPreparedStatementSetter;
 
+	@Resource
+	protected Strategy add;
+	@Resource
+	protected Strategy subtract;
+	@Resource
+	protected Strategy multiply;	
+	
 	@Bean
 	public Job classicScenario() throws Exception {
-		return jobs.get("classicScenario").start(processCsv()).build();
+		return jobs.get("classicScenario").start(processCsv()).next(deleteCsv()).build();
 	}
 
+	
+
+	@Bean
+	protected Step deleteCsv() throws MalformedURLException {
+		return steps.get("deleteTenpCsv").transactionManager(classicTransactionManager()).tasklet(deleteFileTaskelt()).build();
+	}
 	@Bean
 	protected Step processCsv() throws MalformedURLException {
 		return steps.get("processCsv").transactionManager(classicTransactionManager()).<Customer, Customer> chunk(10)
 				.reader(reader()).processor(customerItemProcessor).writer(writer()).build();
 	}
-
+	@Bean
+	@StepScope
+	public DeleteFileTaskelt deleteFileTaskelt() {
+		  DeleteFileTaskelt deleteFileTaskelt = new DeleteFileTaskelt();	
+		  deleteFileTaskelt.setContextFactory(contextFactory());
+		  return deleteFileTaskelt;
+		  
+	}
 	@Bean
 	protected ItemReader<Customer> reader() throws MalformedURLException {
 		FlatFileItemReader<Customer> reader = new FlatFileItemReader<Customer>();
@@ -99,7 +130,23 @@ public class BatchConfig {
 		return defaultLineMapper;
 
 	}
+	
+	@Bean 
+	protected ContextFactory contextFactory(){
+		ContextFactory contextFactory = new ContextFactory();
+		contextFactory.setStrategyMap(strategyMap());
+		return contextFactory;		
+	}
 
+	@Bean
+	protected Map<StrategyEnum, ? extends Strategy> strategyMap(){
+		Map<StrategyEnum, Strategy> strategyMap = new HashMap<>();
+		strategyMap.put(StrategyEnum.Add, add);
+		strategyMap.put(StrategyEnum.Subtract, subtract);
+		strategyMap.put(StrategyEnum.Multiply, multiply);
+		return strategyMap;
+		
+	}
 	@Bean
 	protected DelimitedLineTokenizer customerLineTokenizer() {
 		DelimitedLineTokenizer delimitedLineTokenizer = new DelimitedLineTokenizer(",");
