@@ -70,14 +70,7 @@ public class BatchConfig {
 
 	@Autowired
 	protected ItemPreparedStatementSetter<Customer> customerPreparedStatementSetter;
-
-	@Resource
-	protected Strategy strategyA;
-	@Resource
-	protected Strategy strategyB;
-	@Resource
-	protected Strategy strategyC;
-		
+	
 	@Bean
 	public Job classicScenario() throws Exception {
 		return jobs.get("classicScenario").start(processCsv()).next(deleteCsv()).build();
@@ -87,7 +80,7 @@ public class BatchConfig {
 
 	@Bean
 	protected Step deleteCsv() throws MalformedURLException {
-		return steps.get("deleteTenpCsv").transactionManager(classicTransactionManager()).tasklet(deleteFileTaskelt()).build();
+		return steps.get("deleteTenpCsv").transactionManager(classicTransactionManager()).tasklet(deleteFileTaskelt()).listener(deleteFileTaskelt()).build();
 	}
 	@Bean
 	protected Step processCsv() throws MalformedURLException {
@@ -132,19 +125,9 @@ public class BatchConfig {
 	@Bean 
 	protected StrategyLocator strategyLocator(){
 		StrategyLocator strategyLocator = new StrategyLocator();
-		strategyLocator.setStrategyMap(strategyMap());
 		return strategyLocator;		
 	}
 
-	@Bean
-	protected Map<StrategyEnum, ? extends Strategy> strategyMap(){
-		Map<StrategyEnum, Strategy> strategyMap = new HashMap<>();
-		strategyMap.put(StrategyEnum.StrategyA, strategyA);
-		strategyMap.put(StrategyEnum.StrategyB, strategyB);
-		strategyMap.put(StrategyEnum.StrategyC, strategyC);
-		return strategyMap;
-		
-	}
 	@Bean
 	protected DelimitedLineTokenizer customerLineTokenizer() {
 		DelimitedLineTokenizer delimitedLineTokenizer = new DelimitedLineTokenizer(",");

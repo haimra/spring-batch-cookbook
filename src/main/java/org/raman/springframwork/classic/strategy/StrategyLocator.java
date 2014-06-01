@@ -3,14 +3,13 @@ package org.raman.springframwork.classic.strategy;
 import java.util.Map;
 
 public class StrategyLocator {
-	private Map<StrategyEnum, ? extends Strategy> strategyMap;
+	private Map<String, ? extends Strategy> strategyMap;
 
 	public Strategy lookup(String strategy) {
-		StrategyEnum strategyEnum = StrategyEnum.valueOf(strategy);
-		return strategyMap.get(strategyEnum);
+		return strategyMap.get(strategy);
 	}
 
-	public void setStrategyMap(Map<StrategyEnum, ? extends Strategy> strategyMap) {
+	public void setStrategyMap(Map<String, ? extends Strategy> strategyMap) {
 		this.strategyMap = strategyMap;
 	}
 
